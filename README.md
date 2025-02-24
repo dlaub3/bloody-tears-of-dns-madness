@@ -49,25 +49,36 @@ If a ping from a docker container to a POD IP or POD CLUSTER_IP fails it may be 
 ```
 CLUSTER_IP_CIDR=$(echo
 '{"apiVersion":"v1","kind":"Service","metadata":{"name":"tst"},"spec":{"clusterIP":"1.1.1.1","ports":[{"port":443}]}}'
-| kubectl apply -f - 2>&1 | sed 's/.*valid IPs is //') # https://stackoverflow.com/a/61685899 sudo ip route add
-(10.43.0.0/24)
-"${CLUSTER_IP_CIDR}" dev lo
+| kubectl apply -f - 2>&1 | sed 's/.*valid IPs is //') # https://stackoverflow.com/a/61685899
+
+ip route add "${CLUSTER_IP_CIDR}" dev lo
 ```
 **IP**
 ```
 HOST_IP=$(hostname -i | awk '{ print $1 }')
 POD_IP_CIDR=$(k3s kubectl get nodes -o json | jq -r '.items[].spec.podCIDR')
+
 ip route add "${POD_IP_CIDR}" via "${HOST_IP}"
 ```
 
 ### Docker DNS
 
-Docker resolves DNS using the contents of `/etc/resolv.conf` if it's not `localhost`. Or by providing a DNS resolver.
-Double check `/etc/resolv.conf` within the container if there is trouble.
+Docker resolves DNS using the contents of `/etc/resolv.conf` if it's not `localhost`, or by providing a DNS resolver.
+
+**Option 1**. use `--dns=`
 ```
 docker run -d -ti --rm --dns=172.17.0.2 --name netutils netutils
 ```
 
+**Option 2.** use `/etc/resolv.conf`
+
+```
+DNSMASQ_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dnsmasq)
+
+echo "nameserver $DNSMASQ_IP >> /etc/resolv.conf"
+```
+
+Double check `/etc/resolv.conf` within the container if there is trouble, a container restart may be required.
 
 ## Notes
 
