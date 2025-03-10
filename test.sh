@@ -12,7 +12,7 @@ fi
 
 if [[ "$1" == "k8s" ]]; then
   echo "k8s"
-  kubectl run netutils --image=nicolaka/netutils --restart=Never -- sleep infinity
+  kubectl run netutils --image=netutils --restart=Never -- sleep infinity
   kubectl exec netutils -- cat /etc/resolv.conf # points to CoreDNS, but CoreDNS can forward to `DNSMASQ_IP`
   kubectl exec netutils -- dig traefik.kube-system.svc.cluster.local +short
   kubectl exec netutils -- dig example.internal +short
