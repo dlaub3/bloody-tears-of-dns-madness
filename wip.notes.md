@@ -77,10 +77,10 @@ For example, `127.0.0.53:53`, `127.0.0.1:53`, `<host ip>:53`.
 
 ```
 resolvectl dns
-resolvectl query example.internal
+resolvectl query example.test
 
 dig example.internal
-dig @172.17.0.2 example.internal
+dig @172.17.0.2 example.test
 ```
 
 

@@ -7,7 +7,7 @@ HOST_IP=$(hostname -i | awk '{ print $1 }')
 
 if ! grep -E -q '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' <<<$HOST_IP; then
   echo "HOST_IP is not a valid IP: " + $HOST_IP
-  exit 1;
+  exit 1
 fi
 
 # build netutils for testing
@@ -31,14 +31,15 @@ if ! grep -q dns <(docker network ls); then
 fi
 
 if ! docker ps -a | grep dnsmasq; then
-  docker run -d --name dnsmasq -v ./dnsmasq.conf:/etc/dnsmasq.conf --network dns netutils dnsmasq -k -q
+  docker run -d --name dnsmasq -v ./dnsmasq.conf:/etc/dnsmasq.conf --network dns netutils \
+    dnsmasq -k --log-queries --log-facility=-
 fi
 
 DNSMASQ_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dnsmasq)
 
 if ! grep -E -q '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' <<<$DNSMASQ_IP; then
   echo "DNSMASQ_IP is not a valid IP: " + $DNSMASQ_IP
-  exit 1;
+  exit 1
 fi
 
 # HOST
@@ -48,11 +49,13 @@ fi
 
 if ! grep -q "${DNSMASQ_IP}" /etc/systemd/resolved.conf; then
     sudo scripts/swap.sh /etc/systemd/resolved.conf
+    sudo systemctl restart systemd-resolved
 fi
 
 if ! grep -q "127.0.0.53" /etc/resolv.conf ; then
    # ensure /etc/resolv.conf points to the DNS stub-listener
    echo '/etc/resolv.conf should contain "nameserver 127.0.0.53"'
+   exit 1
 fi
 
 # CoreDNS
